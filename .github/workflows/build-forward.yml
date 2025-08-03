@@ -8,8 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # 1 – switch to WINDIVERT_LAYER_NETWORK_FORWARD
-    - name: Switch to NETWORK_FORWARD
+    - name: Switch to NETWORK_FORWARD        # 1
       run: |
         Get-ChildItem -Path src -Include divert.c,divert.cpp -File |
         ForEach-Object {
@@ -18,27 +17,26 @@ jobs:
           Set-Content $_
         }
 
-    # 2 – download WinDivert 2.2 (variant A) and put files where clumsy expects them
-    - name: Download WinDivert
+    - name: Download WinDivert                # 2
+      shell: pwsh
       run: |
-        Invoke-WebRequest -Uri https://github.com/basil00/WinDivert/releases/download/v2.2.0/WinDivert-2.2.0-A.zip -OutFile wd.zip
-        tar -xf wd.zip
-        mkdir -p third_party/WinDivert/include third_party/WinDivert/x64
-        cp -Recurse WinDivert-2.2.0-A/include/* third_party/WinDivert/include/
-        cp WinDivert-2.2.0-A/x64/WinDivert64.* third_party/WinDivert/x64/
+        $url = "https://github.com/basil00/Divert/releases/download/v2.2.0/WinDivert-2.2.0-A.zip"
+        Invoke-WebRequest -Uri $url -OutFile wd.zip
+        Expand-Archive -Path wd.zip -DestinationPath wd
+        New-Item -ItemType Directory -Path third_party/WinDivert/include -Force | Out-Null
+        New-Item -ItemType Directory -Path third_party/WinDivert/x64     -Force | Out-Null
+        Copy-Item -Recurse wd/WinDivert-2.2.0-A/include/* third_party/WinDivert/include/
+        Copy-Item          wd/WinDivert-2.2.0-A/x64/WinDivert64.* third_party/WinDivert/x64/
 
-    # 3 – install Zig compiler
-    - name: Set up Zig
+    - name: Set up Zig                         # 3
       uses: goto-bus-stop/setup-zig@v2
       with:
         version: 0.12.0
 
-    # 4 – build 64-bit release
-    - name: Build (x64 Release)
+    - name: Build (x64 Release)                # 4
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
 
-    # 5 – publish artefacts for download
-    - name: Upload artifact
+    - name: Upload artifact                    # 5
       uses: actions/upload-artifact@v4
       with:
         name: clumsy-network-forward
