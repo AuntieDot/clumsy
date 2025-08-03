@@ -33,10 +33,10 @@ jobs:
       with:
         version: 0.9.1
 
-    - name: Build (x64 Release)                # 4
-      run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
+    - name: Build (x64 Release)
+      run: zig build -Darch=x64 -Dconf=Release
 
-    - name: Upload artifact                    # 5
+    - name: Upload artifact                    
       uses: actions/upload-artifact@v4
       with:
         name: clumsy-network-forward
