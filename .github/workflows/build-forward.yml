@@ -6,24 +6,26 @@ jobs:
   build:
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v4     # Step 1
 
-    - name: Patch divert.cpp
+    - name: Switch to NETWORK_FORWARD   # Step 2
       run: |
-        (Get-Content src\divert.cpp) -replace `
-          'WINDIVERT_LAYER_NETWORK,', `
-          'WINDIVERT_LAYER_NETWORK_FORWARD,' `
-          | Set-Content src\divert.cpp
+        Get-ChildItem -Path src -Include divert.c,divert.cpp -File |
+        ForEach-Object {
+          (Get-Content $_) -replace 'WINDIVERT_LAYER_NETWORK,', `
+                              'WINDIVERT_LAYER_NETWORK_FORWARD,' |
+          Set-Content $_
+        }
 
-    - name: Set up Zig
+    - name: Set up Zig               # Step 3
       uses: goto-bus-stop/setup-zig@v2
       with:
         version: 0.12.0
 
-    - name: Build (x64 Release)
+    - name: Build (x64 Release)      # Step 4
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
 
-    - name: Upload artifact
+    - name: Upload artifact          # Step 5
       uses: actions/upload-artifact@v4
       with:
         name: clumsy-network-forward
