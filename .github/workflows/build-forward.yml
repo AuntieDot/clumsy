@@ -28,10 +28,16 @@ jobs:
         Copy-Item -Recurse wd/WinDivert-2.2.0-A/include/* third_party/WinDivert/include/
         Copy-Item          wd/WinDivert-2.2.0-A/x64/WinDivert64.* third_party/WinDivert/x64/
 
-    - name: Set up Zig                         # 3
+    - name: Patch build.zig for new Zig API    # 3
+      run: |
+        (Get-Content build.zig) `
+          -replace 'addIncludeDir', 'addIncludePath' |
+        Set-Content build.zig
+
+    - name: Set up Zig
       uses: goto-bus-stop/setup-zig@v2
       with:
-        version: 0.10.1
+        version: 0.12.0
 
     - name: Build (x64 Release)                # 4
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
