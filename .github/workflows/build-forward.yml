@@ -6,9 +6,10 @@ jobs:
   build:
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4     # Step 1
+    - uses: actions/checkout@v4
 
-    - name: Switch to NETWORK_FORWARD   # Step 2
+    # 1) Toggle to NETWORK_FORWARD (handles divert.c *or* divert.cpp)
+    - name: Switch to NETWORK_FORWARD
       run: |
         Get-ChildItem -Path src -Include divert.c,divert.cpp -File |
         ForEach-Object {
@@ -17,15 +18,27 @@ jobs:
           Set-Content $_
         }
 
-    - name: Set up Zig               # Step 3
+    # 2) Download WinDivert 2.2 headers + 64-bit runtime
+    - name: Download WinDivert
+      run: |
+        Invoke-WebRequest -Uri https://github.com/basil00/Divert/releases/download/v2.2.0/WinDivert-2.2.0-A.zip -OutFile wd.zip
+        tar -xf wd.zip
+        mkdir -p third_party/WinDivert/x64
+        cp -Recurse WinDivert-2.2.0-A/include/* third_party/WinDivert/
+        cp WinDivert-2.2.0-A/x64/WinDivert64.* third_party/WinDivert/x64/
+
+    # 3) Install the Zig compiler
+    - name: Set up Zig
       uses: goto-bus-stop/setup-zig@v2
       with:
         version: 0.12.0
 
-    - name: Build (x64 Release)      # Step 4
+    # 4) Build Clumsy (x64 Release)
+    - name: Build (x64 Release)
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
 
-    - name: Upload artifact          # Step 5
+    # 5) Upload artefacts so you can download the finished binary
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: clumsy-network-forward
