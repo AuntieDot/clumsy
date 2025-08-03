@@ -34,14 +34,17 @@ jobs:
     - name: Build (x64 Release)
       run: zig build -Darch=x64 -Dconf=Release
 
-    # 5. Copy the WinDivert runtime files next to the EXE
-    - name: Bundle WinDivert runtime
+    # ——— Bundle runtime DLL/SYS *and* EXE -------------------------------------
+    - name: Copy deliverables to flat dir
       run: |
-        $out   = Join-Path $env:GITHUB_WORKSPACE 'zig-out/bin'
-        $src   = Join-Path $env:GITHUB_WORKSPACE 'external/WinDivert-2.2.0-A/x64'
-        New-Item -ItemType Directory -Path $out -Force | Out-Null
-        Copy-Item "$src\WinDivert.dll"  $out
-        Copy-Item "$src\WinDivert64.sys" $out
+        $out = Join-Path $env:GITHUB_WORKSPACE 'zig-out/bin'
+        $variant = 'x64_Release_A'          # arch_conf_sign   (edit if you change -D flags)
+        $srcExe = Join-Path $env:GITHUB_WORKSPACE "zig-out/$variant/clumsy.exe"
+
+        New-Item $out -ItemType Directory -Force | Out-Null
+        Copy-Item $srcExe                 $out
+        Copy-Item external/WinDivert-2.2.0-A/x64/WinDivert.dll  $out
+        Copy-Item external/WinDivert-2.2.0-A/x64/WinDivert64.sys $out
 
     # 6. Upload artefact
     - uses: actions/upload-artifact@v4
