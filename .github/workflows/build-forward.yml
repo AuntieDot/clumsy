@@ -5,10 +5,16 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: windows-2022
+
     steps:
+    # ────────────────────────────────────────────────────────────────
+    # 1. Checkout repository
     - uses: actions/checkout@v4
 
-    - name: Switch to NETWORK_FORWARD        # 1
+    # ────────────────────────────────────────────────────────────────
+    # 2. Patch divert source to use NETWORK_FORWARD layer
+    - name: Switch to NETWORK_FORWARD
+      shell: pwsh
       run: |
         Get-ChildItem -Path src -Include divert.c,divert.cpp -File |
         ForEach-Object {
@@ -17,30 +23,45 @@ jobs:
           Set-Content $_
         }
 
-    - name: Download WinDivert                # 2
+    # ────────────────────────────────────────────────────────────────
+    # 3. Download WinDivert 2.2 (variant A) headers and 64-bit DLL/SYS
+    - name: Download WinDivert
       shell: pwsh
       run: |
         $url = "https://github.com/basil00/Divert/releases/download/v2.2.0/WinDivert-2.2.0-A.zip"
         Invoke-WebRequest -Uri $url -OutFile wd.zip
         Expand-Archive -Path wd.zip -DestinationPath wd
+
         New-Item -ItemType Directory -Path third_party/WinDivert/include -Force | Out-Null
         New-Item -ItemType Directory -Path third_party/WinDivert/x64     -Force | Out-Null
-        Copy-Item -Recurse wd/WinDivert-2.2.0-A/include/* third_party/WinDivert/include/
-        Copy-Item          wd/WinDivert-2.2.0-A/x64/WinDivert64.* third_party/WinDivert/x64/
 
+        Copy-Item -Recurse wd/WinDivert-2.2.0-A/include/*            third_party/WinDivert/include/
+        Copy-Item          wd/WinDivert-2.2.0-A/x64/WinDivert64.*    third_party/WinDivert/x64/
+
+    # ────────────────────────────────────────────────────────────────
+    # 4. Install Zig 0.9.1 (matches clumsy's build.zig API)
     - name: Set up Zig
       uses: goto-bus-stop/setup-zig@v2
       with:
         version: 0.9.1
 
+    # ────────────────────────────────────────────────────────────────
+    # 5. Build clumsy (x64 Release)
     - name: Build (x64 Release)
       run: zig build -Darch=x64 -Dconf=Release
 
-    - name: Upload artifact                    
+    # ────────────────────────────────────────────────────────────────
+    # 6. Collect artefacts in one folder so upload finds them
+    - name: Collect artefacts
+      shell: pwsh
+      run: |
+        Copy-Item third_party\WinDivert\x64\WinDivert64.dll zig-out\bin\
+        Copy-Item third_party\WinDivert\x64\WinDivert64.sys zig-out\bin\
+
+    # ────────────────────────────────────────────────────────────────
+    # 7. Upload artefact (EXE + DLL + SYS)
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: clumsy-network-forward
-        path: |
-          zig-out/bin/clumsy.exe
-          third_party/WinDivert/x64/WinDivert64.dll
-          third_party/WinDivert/x64/WinDivert64.sys
+        path: zig-out/bin/*
