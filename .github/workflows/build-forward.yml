@@ -28,18 +28,10 @@ jobs:
         Copy-Item -Recurse wd/WinDivert-2.2.0-A/include/* third_party/WinDivert/include/
         Copy-Item          wd/WinDivert-2.2.0-A/x64/WinDivert64.* third_party/WinDivert/x64/
 
-    - name: Modernise build.zig for Zig 0.12
-      shell: pwsh
-      run: |
-        (Get-Content build.zig) -notmatch 'makePath' |
-        ForEach-Object {
-          $_ -replace 'addIncludePath\([^,]+,\s*([^,]+),\s*[^)]+\)', 'addIncludePath($1)'
-        } | Set-Content build.zig
-
     - name: Set up Zig
       uses: goto-bus-stop/setup-zig@v2
       with:
-        version: 0.12.0
+        version: 0.9.1
 
     - name: Build (x64 Release)                # 4
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
