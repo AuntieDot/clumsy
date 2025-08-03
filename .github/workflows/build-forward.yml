@@ -8,21 +8,21 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # 1-line patch: switch WinDivert layer
-    - name: Apply forward-layer patch
+    - name: Patch divert.cpp
       run: |
-        echo -e "diff --git a/src/divert.cpp b/src/divert.cpp\n@@\n-    divertHandle = WinDivertOpen(filter, WINDIVERT_LAYER_NETWORK, DIVERT_PRIORITY, 0);\n+    divertHandle = WinDivertOpen(filter, WINDIVERT_LAYER_NETWORK_FORWARD, DIVERT_PRIORITY, 0);" | git apply -
+        (Get-Content src\divert.cpp) -replace `
+          'WINDIVERT_LAYER_NETWORK,', `
+          'WINDIVERT_LAYER_NETWORK_FORWARD,' `
+          | Set-Content src\divert.cpp
 
-    # Set up the Zig compiler
     - name: Set up Zig
       uses: goto-bus-stop/setup-zig@v2
-      with: { version: 0.12.0 }
+      with:
+        version: 0.12.0
 
-    # Build 64-bit release binary
-    - name: Build
+    - name: Build (x64 Release)
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
 
-    # Publish the artefacts so you can download them
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
