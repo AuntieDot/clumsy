@@ -31,7 +31,7 @@ jobs:
     - name: Set up Zig                         # 3
       uses: goto-bus-stop/setup-zig@v2
       with:
-        version: 0.11.0
+        version: 0.10.1
 
     - name: Build (x64 Release)                # 4
       run: zig build -Drelease-fast -Dtarget=x86_64-windows-gnu
