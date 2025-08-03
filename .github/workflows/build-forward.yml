@@ -23,14 +23,14 @@ jobs:
           Set-Content $_
         }
 
-    # ────────────────────────────────────────────
-    # 3. Download WinDivert 2.2-A headers + 64-bit runtime
+   # ────────────────────────────────────────────
+   # 3. Download WinDivert 2.2-A headers + runtime
     - name: Download WinDivert
       shell: pwsh
       run: |
         $url = "https://github.com/basil00/Divert/releases/download/v2.2.0/WinDivert-2.2.0-A.zip"
         Invoke-WebRequest -Uri $url -OutFile wd.zip
-        Expand-Archive -Path wd.zip -DestinationPath external
+        Expand-Archive -Path wd.zip -DestinationPath external -Force   # <─ add -Force
 
     # ────────────────────────────────────────────
     # 4. Install Zig 0.9.1 (matches build.zig API)
